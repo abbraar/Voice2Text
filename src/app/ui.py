@@ -45,6 +45,12 @@ def render_steps(active_stage: str):
 if "uploader_key" not in st.session_state:
     st.session_state["uploader_key"] = 0
 
+# ✅ persist last result so it doesn't disappear
+if "last_result" not in st.session_state:
+    st.session_state["last_result"] = None
+if "last_model_ui" not in st.session_state:
+    st.session_state["last_model_ui"] = "Gemini 2.5 Flash"
+
 st.markdown("## 🎙️ Voice2Notes")
 st.caption("Upload an audio file → get transcript, key points, and downloadable outputs.")
 
@@ -57,7 +63,12 @@ with st.container(border=True):
     col1, col2 = st.columns([1, 1])
 
     with col1:
-        model_ui = st.selectbox("LLM Model", ["Gemini 2.5 Flash", "Gemini 2.5 Pro"], index=0)
+        model_ui = st.selectbox(
+            "LLM Model",
+            ["Gemini 2.5 Flash", "Gemini 2.5 Pro"],
+            index=0,
+            key="model_ui",
+        )
 
     with col2:
         st.write("")
@@ -68,6 +79,16 @@ MODEL_MAP = {
     "Gemini 2.5 Flash": "gemini-2.5-flash",
     "Gemini 2.5 Pro": "gemini-2.5-pro",
 }
+
+# Optional: user-controlled reset (keeps results unless they choose new run)
+with st.container():
+    c_reset, _ = st.columns([1, 3])
+    with c_reset:
+        if st.session_state["last_result"] is not None:
+            if st.button("➕ New upload", use_container_width=True):
+                st.session_state["last_result"] = None
+                st.session_state["uploader_key"] += 1
+                st.rerun()
 
 if start and uploaded:
     uploads_dir = Path("uploads")
@@ -115,24 +136,32 @@ if start and uploaded:
         )
         elapsed = time.time() - t0
         progress_cb("done", 100, f"Done in {elapsed:.1f}s")
+
+        # ✅ store results so UI keeps showing them on reruns
+        st.session_state["last_result"] = result
+        st.session_state["last_model_ui"] = model_ui
+
     except Exception as e:
         st.exception(e)
         st.stop()
 
     st.divider()
 
+# ✅ Always render last results (even after rerun)
+result_to_show = st.session_state.get("last_result")
+if result_to_show:
     with st.container(border=True):
         st.markdown("### ✅ Results")
         c1, c2, c3 = st.columns(3)
-        c1.metric("Language", result.get("detected_language", "—"))
-        c2.metric("Duration (s)", f"{result.get('duration', 0):.1f}")
+        c1.metric("Language", result_to_show.get("detected_language", "—"))
+        c2.metric("Duration (s)", f"{result_to_show.get('duration', 0):.1f}")
         c3.metric("Outputs", "Ready")
 
         st.markdown("#### Downloads")
         d1, d2, d3, d4 = st.columns(4)
 
         def dl(col, key, label):
-            p = result.get(key)
+            p = result_to_show.get(key)
             if not p or not os.path.exists(p):
                 col.button(label, disabled=True, use_container_width=True)
                 return
@@ -143,10 +172,6 @@ if start and uploaded:
         dl(d2, "md", "📝 Markdown")
         dl(d3, "pdf", "📑 PDF")
         dl(d4, "json", "🧾 JSON")
-
-    # ✅ reset uploader by changing key (safe), then rerun
-    st.session_state["uploader_key"] += 1
-    st.rerun()
 
 st.markdown("---")
 st.caption("Made by **Abrar Abdulaziz**")
