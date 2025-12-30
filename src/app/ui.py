@@ -41,6 +41,10 @@ def render_steps(active_stage: str):
                 else:
                     st.write(label)
 
+# ✅ uploader reset mechanism (don’t set widget state directly)
+if "uploader_key" not in st.session_state:
+    st.session_state["uploader_key"] = 0
+
 st.markdown("## 🎙️ Voice2Notes")
 st.caption("Upload an audio file → get transcript, key points, and downloadable outputs.")
 
@@ -48,7 +52,7 @@ with st.container(border=True):
     uploaded = st.file_uploader(
         "Audio file",
         type=["wav", "mp3", "m4a", "aac", "ogg"],
-        key="file_uploader",
+        key=f"file_uploader_{st.session_state['uploader_key']}",
     )
     col1, col2 = st.columns([1, 1])
 
@@ -88,7 +92,7 @@ if start and uploaded:
             status_line.caption(msg)
 
     progress_cb("upload", 3, "Uploading file…")
-    data = uploaded.getvalue()
+    data = uploaded.getvalue()  # ✅ safe bytes copy
 
     if not data or len(data) < 1024:
         st.error("Uploaded file looks empty/corrupted. Please re-upload.")
@@ -140,8 +144,9 @@ if start and uploaded:
         dl(d3, "pdf", "📑 PDF")
         dl(d4, "json", "🧾 JSON")
 
-    # ✅ Clear uploader state
-    st.session_state["file_uploader"] = None
+    # ✅ reset uploader by changing key (safe), then rerun
+    st.session_state["uploader_key"] += 1
+    st.rerun()
 
 st.markdown("---")
 st.caption("Made by **Abrar Abdulaziz**")
