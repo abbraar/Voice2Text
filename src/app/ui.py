@@ -44,11 +44,15 @@ def render_steps(active_stage: str):
 st.markdown("## 🎙️ Voice2Notes")
 st.caption("Upload an audio file → get transcript, key points, and downloadable outputs.")
 
+# Initialize session state for file uploader
+if "uploaded_file" not in st.session_state:
+    st.session_state.uploaded_file = None
+
 with st.container(border=True):
     uploaded = st.file_uploader(
         "Audio file",
         type=["wav", "mp3", "m4a", "aac", "ogg"],
-        key="audio_file",  # ✅ allows clearing after run
+        key="file_uploader"
     )
     col1, col2 = st.columns([1, 1])
 
@@ -146,8 +150,9 @@ if start and uploaded:
         dl(d3, "pdf", "📑 PDF")
         dl(d4, "json", "🧾 JSON")
 
-    # ✅ Clear uploader to avoid buffer finalizer issues on rerun
-    st.session_state["audio_file"] = None
+    # Clear uploader to avoid buffer finalizer issues on rerun
+    if "file_uploader" in st.session_state:
+        st.session_state.file_uploader = None
     
     st.markdown("---")
     st.caption("Made by **Abrar Abdulaziz**")
