@@ -44,15 +44,11 @@ def render_steps(active_stage: str):
 st.markdown("## 🎙️ Voice2Notes")
 st.caption("Upload an audio file → get transcript, key points, and downloadable outputs.")
 
-# Initialize session state for file uploader
-if "uploaded_file" not in st.session_state:
-    st.session_state.uploaded_file = None
-
 with st.container(border=True):
     uploaded = st.file_uploader(
         "Audio file",
         type=["wav", "mp3", "m4a", "aac", "ogg"],
-        key="file_uploader"
+        key="file_uploader",
     )
     col1, col2 = st.columns([1, 1])
 
@@ -91,9 +87,8 @@ if start and uploaded:
         if msg:
             status_line.caption(msg)
 
-    # ---- Save upload safely (✅ no read(), ✅ no getbuffer()) ----
     progress_cb("upload", 3, "Uploading file…")
-    data = uploaded.getvalue()  # ✅ safe bytes copy
+    data = uploaded.getvalue()
 
     if not data or len(data) < 1024:
         st.error("Uploaded file looks empty/corrupted. Please re-upload.")
@@ -101,14 +96,11 @@ if start and uploaded:
 
     with open(path, "wb") as f:
         f.write(data)
-
-    # Free memory early
     del data
 
     size_mb = os.path.getsize(path) / (1024 * 1024)
     status_line.caption(f"Saved: {path.name} ({size_mb:.2f} MB)")
 
-    # ---- Run pipeline ----
     try:
         t0 = time.time()
         result = run(
@@ -119,14 +111,12 @@ if start and uploaded:
         )
         elapsed = time.time() - t0
         progress_cb("done", 100, f"Done in {elapsed:.1f}s")
-
     except Exception as e:
         st.exception(e)
         st.stop()
 
     st.divider()
 
-    # Results
     with st.container(border=True):
         st.markdown("### ✅ Results")
         c1, c2, c3 = st.columns(3)
@@ -150,10 +140,8 @@ if start and uploaded:
         dl(d3, "pdf", "📑 PDF")
         dl(d4, "json", "🧾 JSON")
 
-    # Clear uploader to avoid buffer finalizer issues on rerun
-    if "file_uploader" in st.session_state:
-        st.session_state.file_uploader = None
-    
-    st.markdown("---")
-    st.caption("Made by **Abrar Abdulaziz**")
+    # ✅ Clear uploader state
+    st.session_state["file_uploader"] = None
 
+st.markdown("---")
+st.caption("Made by **Abrar Abdulaziz**")
