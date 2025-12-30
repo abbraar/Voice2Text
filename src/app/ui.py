@@ -45,7 +45,11 @@ st.markdown("## 🎙️ Voice2Notes")
 st.caption("Upload an audio file → get transcript, key points, and downloadable outputs.")
 
 with st.container(border=True):
-    uploaded = st.file_uploader("Audio file", type=["wav", "mp3", "m4a", "aac", "ogg"])
+    uploaded = st.file_uploader(
+        "Audio file",
+        type=["wav", "mp3", "m4a", "aac", "ogg"],
+        key="audio_file",  # ✅ allows clearing after run
+    )
     col1, col2 = st.columns([1, 1])
 
     with col1:
@@ -83,15 +87,19 @@ if start and uploaded:
         if msg:
             status_line.caption(msg)
 
-    # ---- Save upload safely (NO uploaded.read()) ----
+    # ---- Save upload safely (✅ no read(), ✅ no getbuffer()) ----
     progress_cb("upload", 3, "Uploading file…")
-    data = uploaded.getbuffer()  # safer than .read()
-    if len(data) < 1024:
+    data = uploaded.getvalue()  # ✅ safe bytes copy
+
+    if not data or len(data) < 1024:
         st.error("Uploaded file looks empty/corrupted. Please re-upload.")
         st.stop()
 
     with open(path, "wb") as f:
         f.write(data)
+
+    # Free memory early
+    del data
 
     size_mb = os.path.getsize(path) / (1024 * 1024)
     status_line.caption(f"Saved: {path.name} ({size_mb:.2f} MB)")
@@ -137,3 +145,10 @@ if start and uploaded:
         dl(d2, "md", "📝 Markdown")
         dl(d3, "pdf", "📑 PDF")
         dl(d4, "json", "🧾 JSON")
+
+    # ✅ Clear uploader to avoid buffer finalizer issues on rerun
+    st.session_state["audio_file"] = None
+    
+    st.markdown("---")
+    st.caption("Made by **Abrar Abdulaziz**")
+
