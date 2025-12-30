@@ -1,0 +1,22 @@
+# secrets
+.env
+*.env
+
+# python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.envrc
+
+# streamlit
+.streamlit/
+
+# outputs / uploads
+uploads/
+outputs/
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/
