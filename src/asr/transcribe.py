@@ -30,7 +30,7 @@ def _pick_device_and_compute(device: str | None, compute_type: str | None):
 
 def transcribe(
     audio_path: str,
-    model_size: str = "large-v3",
+    model_size: str = "medium",
     device: str | None = "auto",          # auto/cuda/cpu
     compute_type: str | None = None,      # float16/int8/...
 ):
