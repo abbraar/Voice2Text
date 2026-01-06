@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 PROJECT_ROOT = Path(__file__).resolve().parents[2]   # voice2notes/
 load_dotenv(PROJECT_ROOT / ".env")
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-2.5-flash-001"  # Updated model name
 
 SYSTEM_PROMPT = (
     "You are an internal corporate meeting assistant.\n"

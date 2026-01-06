@@ -1,6 +1,6 @@
 streamlit
 python-dotenv
-google-genai
+google-genai>=0.1.0
 faster-whisper
 av
 reportlab
